@@ -1,0 +1,34 @@
+schemaVersion: 2.1.0
+metadata:
+  generateName: image-build-test
+components:
+  - name: tools
+    container:
+      image: quay.io/devfile/universal-developer-image:latest
+      memoryLimit: 10G
+      memoryRequest: 512Mi
+      cpuRequest: 1000m
+      cpuLimit: 5000m
+commands:
+  - id: logintointernalregistry
+    exec:
+      label: "Login to internal OpenShift image registry"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "REGISTRY="$(oc get route/default-route -n openshift-image-registry -o=jsonpath='{.spec.host}')/openshift" && podman login --tls-verify=false -u unused -p $(oc whoami -t)  ${REGISTRY}"
+      group:
+        kind: run
+  - id: runtest
+    exec:
+      label: "Run run_test.sh"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "./scripts/run_test.sh > ./results/run_test_out 2>&1"
+      group:
+        kind: run
+  - id: runlayertest
+    exec:
+      label: "Run run_layertest.sh"
+      component: tools
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: "./scripts/run_layertest.sh > ./results/run_layertest_out 2>&1"
